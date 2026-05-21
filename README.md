@@ -1,236 +1,226 @@
-# n8n-nodes-git-backup
+# 📦 n8n-nodes-git-backup
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![n8n community node](https://img.shields.io/badge/n8n-community%20node-orange)](https://docs.n8n.io/integrations/community-nodes/)
+[![npm version](https://img.shields.io/npm/v/n8n-nodes-git-backup.svg?style=flat-square&logo=npm&color=CB3837)](https://www.npmjs.com/package/n8n-nodes-git-backup)
+[![n8n compatibility](https://img.shields.io/badge/n8n-community%20node-orange?style=flat-square&logo=n8n)](https://docs.n8n.io/integrations/community-nodes/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
 
-> **An n8n community node that automatically backs up workflow definitions as versioned JSON files to any GitHub repository — with SHA-aware conflict resolution, semantic commit messages, and full pagination support.**
-
----
-
-## ✨ Features
-
-| Feature | Details |
-|---|---|
-| **Backup Current Workflow** | Reads the executing workflow via n8n API and pushes it to GitHub |
-| **Backup All Workflows** | Iterates all workflows (paginated) and pushes each as a separate file |
-| **SHA-Aware Updates** | Fetches the file's SHA before writing — never causes GitHub conflicts |
-| **Auto Commit Messages** | Generates Conventional Commit messages when none is provided |
-| **Active-Only Filter** | Optionally skip inactive/disabled workflows |
-| **Continue on Error** | "Backup All" can keep going even if one workflow fails |
-| **Clean Filenames** | Workflow names are sanitized into safe, lowercase, hyphenated filenames |
+> **Free, automatic, and secure workflow backups directly to GitHub for local, desktop, and self-hosted n8n users.** No enterprise license required.
 
 ---
 
-## 📋 Prerequisites
+## 💡 The Problem vs. The Solution
 
-- **n8n** ≥ 0.190.0 (requires REST API support)
-- **Node.js** ≥ 18
-- A **GitHub Personal Access Token (PAT)** with the `repo` scope
-- n8n API enabled (`N8N_PUBLIC_API_DISABLED=false`, which is the default)
+### 🔴 The Problem
+* **Locked Behind Paywall:** The official Git integration in n8n is an Enterprise/Cloud feature, costing thousands of dollars annually.
+* **Manual Exports Are Painful:** Manually downloading JSON files via the GUI is repetitive, tedious, and easy to forget.
+* **No Version History:** Modifying automation logic without automated version control is a recipe for lost work.
+
+### 🟢 The Solution (`n8n-nodes-git-backup`)
+* **100% Free & Open Source:** Version control backups for local, desktop, and self-hosted n8n instances without paying a cent.
+* **Automated & Unattended:** Simply hook the node to a `Schedule Trigger` or an `On Workflow Saved` system to back up files automatically.
+* **DevOps Best Practices:** Clean, formatted JSON files are pushed directly to your repository with automated, semantic commit messages.
+
+---
+
+## ⚡ Key Features
+
+* 🔄 **Flexible Backup Scopes:** Back up either the **currently executing workflow** or **all workflows** in a single run.
+* 🛡️ **SHA-Aware Conflict Resolution:** Automatically retrieves the remote file's SHA hash prior to committing, preventing push conflicts and overwrite issues.
+* 🏷️ **Conventional Commit Messages:** Auto-generates structured commit messages (e.g., `chore(backup): update workflow [Send Invoice] (2026-05-21)`) if no custom message is provided.
+* ⏭️ **Continue on Individual Error:** Robust error handling so a failure backing up one workflow won't abort the entire backup sequence.
+* 🧹 **Automatic Sanitization:** Converts arbitrary workflow names into safe, web-friendly, lowercase filenames.
+* 📦 **Transparent Pagination:** Native support for instances with hundreds of workflows, fetching all definitions dynamically via the n8n REST API.
+
+---
+
+## 📐 How It Works
+
+```mermaid
+graph TD
+    subgraph Local n8n Instance (Desktop / Docker)
+        ST[Schedule Trigger] -->|Triggers Daily| GB[Git Backup Node]
+        GB -->|Fetch Definitions| API[n8n REST API]
+    end
+    subgraph Remote Version Control
+        GB -->|1. Get current SHA| GH_API[GitHub Contents API]
+        GB -->|2. Push JSON files| GH_API
+        GH_API -->|Store & Version| REPO[(GitHub Repository)]
+    end
+    style Local n8n Instance (Desktop / Docker) fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style Remote Version Control fill:#eef,stroke:#333,stroke-width:2px
+```
 
 ---
 
 ## 🚀 Installation
 
-### Option A — Install from npm (once published)
-```bash
-# Inside your n8n Docker container or n8n installation directory
-npm install n8n-nodes-git-backup
-```
-Then restart n8n. The node will appear under the **Utility** category.
+### Option A: Install via n8n GUI (Once Published)
+1. In n8n, navigate to **Settings > Community Nodes**.
+2. Click **Install a Node**.
+3. Type `n8n-nodes-git-backup` into the npm Package Name field.
+4. Agree to the risk notice and click **Install**.
 
 ---
 
-### Option B — Local Development via `npm link`
+### Option B: Local Development / Manual Symlink (`npm link`)
+If you are developing locally, testing changes, or running n8n Desktop / Docker:
 
-Use this method to test the node locally **before publishing** to npm.
-
-#### Step 1: Clone and build
-
+#### 1. Clone & Build the Extension
 ```bash
 git clone https://github.com/dsc2q/n8n-nodes-git-backup.git
 cd n8n-nodes-git-backup
-
 npm install
 npm run build
 ```
 
-#### Step 2: Register the package globally
-
+#### 2. Register the Node Globally
 ```bash
 npm link
 ```
 
-This creates a global symlink pointing to your local build.
+#### 3. Link it to your n8n Instance
 
-#### Step 3A: Link into n8n Desktop
+* **For n8n Desktop / Global Installation:**
+  Find where your global node modules are located (e.g. `%APPDATA%\npm\node_modules\n8n` on Windows or `/usr/local/lib/node_modules/n8n` on macOS/Linux):
+  ```bash
+  cd /path/to/global/node_modules/n8n
+  npm link n8n-nodes-git-backup
+  ```
 
-```bash
-# Find where n8n is installed (example paths):
-# Windows:  %APPDATA%\npm\node_modules\n8n
-# macOS:    /usr/local/lib/node_modules/n8n
-# Linux:    ~/.npm-global/lib/node_modules/n8n
+* **For Docker (docker-compose.yaml):**
+  Mount your local development folder directly inside the custom extension directory:
+  ```yaml
+  services:
+    n8n:
+      image: n8nio/n8n:latest
+      environment:
+        - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
+      volumes:
+        - n8n_data:/home/node/.n8n
+        - /absolute/path/to/n8n-nodes-git-backup:/home/node/.n8n/custom/n8n-nodes-git-backup
+  ```
 
-cd /path/to/your/n8n/installation
-npm link n8n-nodes-git-backup
-```
-
-#### Step 3B: Link into n8n running in Docker
-
-```bash
-# Copy the built files into the Docker volume
-docker cp ./dist <your-n8n-container>:/home/node/.n8n/custom/n8n-nodes-git-backup/dist
-docker cp ./package.json <your-n8n-container>:/home/node/.n8n/custom/n8n-nodes-git-backup/package.json
-docker cp ./credentials <your-n8n-container>:/home/node/.n8n/custom/n8n-nodes-git-backup/credentials
-
-# OR: Mount the project directory as a volume in docker-compose.yaml:
-```
-
-```yaml
-# docker-compose.yaml (example snippet)
-services:
-  n8n:
-    image: n8nio/n8n
-    volumes:
-      - ./n8n-nodes-git-backup:/home/node/.n8n/custom/n8n-nodes-git-backup
-    environment:
-      - N8N_CUSTOM_EXTENSIONS=/home/node/.n8n/custom
-```
-
-#### Step 4: Restart n8n
-
-```bash
-# If running as a process:
-n8n start
-
-# If running in Docker:
-docker-compose restart n8n
-```
-
-#### Step 5: Verify it loaded
-
-Open n8n in your browser → search for **"Git Backup"** in the node panel. 🎉
+#### 4. Restart n8n
+Restart n8n Desktop or run `docker compose restart n8n`. Search for **"Git Backup"** in your node selector. 🎉
 
 ---
 
-## ⚙️ Credentials Setup
+## ⚙️ Credentials & Setup
 
-Create a new credential of type **"Git Backup (GitHub + n8n API)"** and fill in:
+Create a new credential of type **"Git Backup (GitHub + n8n API)"** in your n8n dashboard:
 
-| Field | Description | Example |
+| Field Name | Description | Example Value |
 |---|---|---|
-| GitHub PAT | Personal Access Token with `repo` scope | `ghp_xxxx...` |
-| Repository Owner | GitHub username or org | `dsc2q` |
-| Repository Name | Target repository name | `n8n-backups` |
-| Branch | Must exist before first run | `main` |
-| n8n Base URL | URL of your n8n instance | `http://localhost:5678` |
-| n8n API Key | Generate in n8n Settings → API Keys | `n8n_api_xxxx...` |
+| **GitHub Token (PAT)** | Personal Access Token with `repo` scope | `ghp_qgNq9ex...` |
+| **Repository Owner** | Your GitHub username or organization name | `dsc2q` |
+| **Repository Name** | The target repo to store workflow JSONs | `n8n-workflow-backups` |
+| **Branch** | Target branch name (must exist beforehand) | `main` |
+| **n8n Base URL** | Local/Remote address of your n8n instance | `http://localhost:5678` |
+| **n8n API Key** | API Key to read workflow JSON definitions | `n8n_api_9a8f...` |
 
-> **Generating a GitHub PAT:** Go to [github.com/settings/tokens](https://github.com/settings/tokens) → **Generate new token (classic)** → check **repo** → Generate.
->
-> **Generating an n8n API Key:** In n8n, go to **Settings → Personal Settings → API Keys** → Create new key.
+### 🔑 Generating Keys
+1. **GitHub PAT:** Go to [github.com/settings/tokens](https://github.com/settings/tokens) > **Generate new token (classic)** > Select **`repo`** scope > Click **Generate**.
+2. **n8n API Key:** In n8n, go to **Settings > Personal Settings > API Keys** > Click **Create API Key**.
 
 ---
 
-## 🔧 Node Operations
+## ⚙️ Node Parameters
 
-### 1. Backup Current Workflow
+* **Operation:**
+  * `Backup Current Workflow`: Backs up only the workflow where this node resides.
+  * `Backup All Workflows`: Queries n8n API for all workflows and backs them all up.
+* **File Path Prefix:** The folder directory in the repo where files will be stored (e.g., `workflows/`).
+* **Commit Message:** Custom commit message. If empty, the node generates a structured Conventional Commit message automatically.
+* **Continue on Individual Failure (Backup All only):** Skip faulty workflows and keep backing up others.
+* **Backup Active Workflows Only (Backup All only):** Skip inactive/disabled workflows.
 
-Reads the workflow in which this node is executing and pushes its JSON to GitHub.
+---
 
-**Output item fields:**
+## 📅 Example Backup Workflow
+
+Copy the JSON snippet below and paste it directly into your n8n workspace to create an automated daily backup workflow:
 
 ```json
 {
-  "workflowId": "abc123",
-  "workflowName": "Send Invoice",
-  "filePath": "workflows/send-invoice.json",
-  "status": "updated",
-  "commitUrl": "https://github.com/dsc2q/n8n-backups/commit/abc...",
-  "commitSha": "abc..."
+  "name": "Daily GitHub Workflow Backup",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 0 * * *"
+            }
+          ]
+        }
+      },
+      "id": "d0f81d9f-a4be-47ea-9bcf-1a134fa5efb0",
+      "name": "Schedule Trigger",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        250,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "backupAllWorkflows",
+        "filePathPrefix": "workflows/",
+        "continueOnError": true,
+        "activeOnly": false
+      },
+      "id": "e887f4c0-7cf1-45bd-8ee2-b80c1032a101",
+      "name": "Git Backup",
+      "type": "n8n-nodes-git-backup.gitBackup",
+      "typeVersion": 1,
+      "position": [
+        480,
+        300
+      ],
+      "credentials": {
+        "gitBackupApi": {
+          "id": "credential-placeholder",
+          "name": "GitHub Backups Connection"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Schedule Trigger": {
+      "main": [
+        [
+          {
+            "node": "Git Backup",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1"
+  }
 }
 ```
 
-**Tip:** Trigger this with a **Schedule** node (e.g., daily at midnight) to keep a continuous backup history.
-
-### 2. Backup All Workflows
-
-Fetches every workflow from n8n (paginated, no limit) and pushes each as an individual JSON file.
-
-**Additional parameters:**
-
-| Parameter | Default | Description |
-|---|---|---|
-| Continue on Individual Failure | `true` | Keep backing up other workflows if one fails |
-| Backup Active Workflows Only | `false` | Skip inactive/disabled workflows |
-
-**Output:** One item per workflow, with `status: "created"`, `"updated"`, or `"failed"`.
-
 ---
 
-## 📂 GitHub Repository Structure
+## 🤝 Contributing
 
-After running "Backup All Workflows", your GitHub repository will look like this:
+Contributions are welcome! Please feel free to open issues or submit Pull Requests to help improve this community node.
 
-```
-n8n-backups/
-└── workflows/
-    ├── send-invoice.json
-    ├── sync-crm-data.json
-    ├── daily-report.json
-    └── onboarding-sequence.json
-```
-
-Each JSON file is a full n8n workflow export — you can **import it directly** back into n8n using:
-**n8n → Workflows → Import from File**.
-
----
-
-## 💡 Usage Examples
-
-### Example 1: Daily Automated Backup
-
-```
-[Schedule Trigger] → [Git Backup: Backup All Workflows]
-```
-
-Set the schedule to run every night at midnight. All your workflows will be versioned daily on GitHub with automatic commit messages like:
-```
-chore(backup): update workflow [Send Invoice] (2024-06-15)
-```
-
-### Example 2: Backup After Every Change (Webhook-triggered)
-
-```
-[n8n Trigger: Workflow Updated] → [Git Backup: Backup Current Workflow]
-```
-
-Use n8n's internal workflow hooks to trigger a backup every time you modify a workflow.
-
-### Example 3: Custom Commit Messages
-
-Set the **Commit Message** field to `{{ "release: " + $now.format("yyyy-MM-dd") }}` using n8n expressions to create release-tagged commits.
-
----
-
-## 🏗️ Development
-
-```bash
-# Install dependencies
-npm install
-
-# Build TypeScript → dist/
-npm run build
-
-# Watch mode for development
-npm run dev
-
-# Format code
-npm run format
-```
+1. Fork the Project.
+2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`).
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`).
+4. Push to the Branch (`git push origin feature/AmazingFeature`).
+5. Open a Pull Request.
 
 ---
 
 ## 📄 License
 
-MIT — see [LICENSE](LICENSE) for details.
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
