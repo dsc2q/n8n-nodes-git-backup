@@ -39,17 +39,17 @@
 
 ```mermaid
 graph TD
-    subgraph Local n8n Instance (Desktop / Docker)
+    subgraph local_n8n ["Local n8n Instance (Desktop / Docker)"]
         ST[Schedule Trigger] -->|Triggers Daily| GB[Git Backup Node]
         GB -->|Fetch Definitions| API[n8n REST API]
     end
-    subgraph Remote Version Control
+    subgraph remote_git ["Remote Version Control"]
         GB -->|1. Get current SHA| GH_API[GitHub Contents API]
         GB -->|2. Push JSON files| GH_API
-        GH_API -->|Store & Version| REPO[(GitHub Repository)]
+        GH_API -->|Store & Version| REPO[("GitHub Repository")]
     end
-    style Local n8n Instance (Desktop / Docker) fill:#f9f9f9,stroke:#333,stroke-width:2px
-    style Remote Version Control fill:#eef,stroke:#333,stroke-width:2px
+    style local_n8n fill:#f9f9f9,stroke:#333,stroke-width:2px
+    style remote_git fill:#eef,stroke:#333,stroke-width:2px
 ```
 
 ---
