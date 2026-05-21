@@ -1,0 +1,58 @@
+{
+  "name": "n8n-nodes-git-backup",
+  "version": "0.1.0",
+  "description": "n8n community node to automatically backup workflows as versioned JSON files to a GitHub repository",
+  "main": "dist/index.js",
+  "keywords": [
+    "n8n-community-node-package",
+    "n8n",
+    "workflow",
+    "backup",
+    "github",
+    "git",
+    "devops",
+    "automation",
+    "version-control"
+  ],
+  "license": "MIT",
+  "homepage": "https://github.com/dsc2q/n8n-nodes-git-backup",
+  "author": {
+    "name": "dsc2q",
+    "url": "https://github.com/dsc2q"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/dsc2q/n8n-nodes-git-backup.git"
+  },
+  "scripts": {
+    "prebuild": "node -e \"const fs=require('fs');if(fs.existsSync('dist'))fs.rmSync('dist',{recursive:true,force:true})\"",
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "lint": "eslint nodes credentials --ext .ts --no-eslintrc -c '{\"extends\":[\"eslint:recommended\"]}' 2>/dev/null || tsc --noEmit",
+    "format": "prettier --write \"nodes/**/*.ts\" \"credentials/**/*.ts\""
+  },
+  "files": [
+    "dist"
+  ],
+  "n8n": {
+    "n8nNodesApiVersion": 1,
+    "credentials": [
+      "dist/credentials/GitBackupApi.credentials.js"
+    ],
+    "nodes": [
+      "dist/nodes/GitBackup/GitBackup.node.js"
+    ]
+  },
+  "devDependencies": {
+    "@types/node": "^20.14.0",
+    "n8n-workflow": "*",
+    "prettier": "^3.3.2",
+    "typescript": "^5.4.5"
+  },
+  "peerDependencies": {
+    "n8n-workflow": "*"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
