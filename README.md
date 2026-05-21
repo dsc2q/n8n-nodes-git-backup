@@ -6,6 +6,8 @@
 
 > **Free, automatic, and secure workflow backups directly to GitHub for local, desktop, and self-hosted n8n users.** No enterprise license required.
 
+![n8n Git Backup Workflow Screenshot](assets/workflow-screenshot.png)
+
 ---
 
 ## 💡 The Problem vs. The Solution
